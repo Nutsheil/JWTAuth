@@ -15,13 +15,24 @@ export class UsersService {
     const user = await this.userRepository.create(dto);
 
     const role = await this.rolesService.getRoleByValue('USER');
-    if (role) await user.$set('roles', [role.id]);
+    if (role) {
+      await user.$set('roles', [role.id]);
+      user.roles = [role];
+    }
 
     return user;
   }
 
   async getAllUsers() {
     const users = await this.userRepository.findAll({ include: { all: true } });
+    // console.log(users.map((user) => user.dataValues.roles.map((role) => role.dataValues)));
+    console.log(users.map((user) => user.roles));
     return users;
+  }
+
+  async getUserByEmail(email: string) {
+    const user = await this.userRepository.findOne({ where: { email }, include: { all: true } });
+    console.log(user?.dataValues.roles.map((role) => role.dataValues));
+    return user;
   }
 }
