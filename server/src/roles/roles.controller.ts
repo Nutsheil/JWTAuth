@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { RolesService } from './roles.service';
 import { Role } from './roles.model';
@@ -11,6 +12,7 @@ export class RolesController {
 
   @ApiOperation({ summary: 'Создание роли' })
   @ApiResponse({ status: 200, type: Role })
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body() roleDto: CreateRoleDto) {
     return this.rolesService.createRole(roleDto);
@@ -18,6 +20,7 @@ export class RolesController {
 
   @ApiOperation({ summary: 'Получение списка всех ролей' })
   @ApiResponse({ status: 200, type: [Role] })
+  @UseGuards(JwtAuthGuard)
   @Get()
   getAll() {
     return this.rolesService.getAllRoles();
@@ -25,6 +28,7 @@ export class RolesController {
 
   @ApiOperation({ summary: 'Получение роли по названию' })
   @ApiResponse({ status: 200, type: [Role] })
+  @UseGuards(JwtAuthGuard)
   @Get('/:value')
   getByValue(@Param('value') value: string) {
     return this.rolesService.getRoleByValue(value);
