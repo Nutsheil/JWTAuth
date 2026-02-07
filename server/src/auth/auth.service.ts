@@ -5,6 +5,7 @@ import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { UsersService } from 'src/users/users.service';
 import { User } from 'src/users/users.model';
 import { LoginDto } from './dto/login.dto';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
@@ -15,7 +16,8 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const user = await this.validateUser(dto);
-    return this.generateToken(user);
+    const accessToken = this.generateToken(user);
+    return { accessToken, user };
   }
 
   async registration(dto: CreateUserDto) {
@@ -27,16 +29,28 @@ export class AuthService {
     const hashPassword = await bcryptjs.hash(dto.password, 5);
     const user = await this.usersService.createUser({ ...dto, password: hashPassword });
 
-    return this.generateToken(user);
+    const accessToken = this.generateToken(user);
+
+    return { accessToken, user };
+  }
+
+  async getMyData(authorizationHeader: string) {
+    const [type, token] = authorizationHeader.split(' ');
+    if (type !== 'Bearer' || !token) {
+      throw new UnauthorizedException({ message: 'Пользователь не авторизован' });
+    }
+
+    const user = this.jwtService.verify<JwtPayload>(token);
+
+    const userData = await this.usersService.getUserByEmail(user.email);
+    return userData;
   }
 
   private generateToken(user: User) {
     const { id, email, roles } = user;
     const payload = { id, email, roles };
 
-    return {
-      accessToken: this.jwtService.sign(payload),
-    };
+    return this.jwtService.sign(payload);
   }
 
   private async validateUser(dto: LoginDto) {
